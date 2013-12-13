@@ -49,20 +49,17 @@ var karmaPlugin = function(options) {
   }
 
   function runKarma() {
-    server.start(options, function(code) {
-      console.log('Karma finished with ', code);
-      done();
-    });
+    startKarmaServer();
 
     // Support `karma run`, useful for watch tasks
-    // if (options.run) {
-    //     runner.run(options, function() {
-    //       console.log('Karma finished');
-    //       childProcess.kill();
-    //       done();
-    //     });
-    //   return;
-    // }
+    if (options.run) {
+        runner.run(options, function() {
+          console.log('Karma finished');
+          childProcess.kill();
+          done();
+        });
+      return;
+    }
   }
 
   var files = [];
