@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>todos</title>
+    <link rel="stylesheet" href="styles/todo.css">
+    <script src="scripts/todo.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1 class="todo-heading">todos</h1>
+    </header>
+    <section id="todo-app"></section>
+    <footer>
+      <p>todos is part of <a href="https://github.com/lazd/wellTested">wellTested</a> by <a href="http://lazd.github.io/">Larry Davis</a></p>
+      <p><a href="http://github.com/lazd">github/lazd</a> - <a href="http://twitter.com/@lazdnet">@lazdnet</a></p>
+    </footer>
+    <script type="text/javascript">
+      var items;
+      // A little hack to start fresh for end-to-end and visual tests
+      if (typeof _phantom === 'undefined') {
+        items = [
+          {
+            name: 'Client-side unit tests',
+            done: true
+          },
+          {
+            name: 'End-to-end workflow tests',
+            done: true
+          },
+          {
+            name: 'Visual tests',
+            done: true
+          },
+          {
+            name: 'Continous integration',
+            done: true
+          },
+          {
+            name: 'Code coverage reporting',
+            done: true
+          },
+          {
+            name: 'Server-side unit tests',
+            done: false
+          },
+          {
+            name: 'Client-server integration tests',
+            done: false
+          }
+        ];
+      }
+      todo.init(items);
+    </script>
+  </body>
+</html>
