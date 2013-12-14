@@ -14,8 +14,12 @@ var runner = require('karma').runner;
 var server = require('karma').server;
 
 var karmaPlugin = function(options) {
+  var child;
+  var stream;
+
   options = extend({
-    background: false,
+    autoWatch: false,
+    background: false
     // allow passing of cli args on as client args, for example --grep=x
     // clientArgs: optimist.argv,
     // client: { args: optimist.argv }
@@ -28,37 +32,56 @@ var karmaPlugin = function(options) {
 
   console.log('Karma options:', options);
 
+  // Just start the server
+  if (options.background) {
+    startKarmaServer();
+    return;
+  }
+
+  function done(code) {
+    // Stop the server if it's running
+    if (child) {
+      child.kill();
+    }
+
+    // End the stream if it exists
+    if (stream) {
+      stream.emit('end');
+    }
+  }
+
   function startKarmaServer() {
     console.log('Starting Karma server...');
 
-    var childProcess = spawn(
+    // Start the server
+    child = spawn(
       'node',
       [
         path.join(__dirname, 'lib', 'background.js'),
         JSON.stringify(options)
       ],
       {
-        stdio: 'pipe'
+        stdio: 'inherit'
       }
     );
 
-    childProcess.on('exit', function() {
+    // Cleanup when the child process exits
+    child.on('exit', function() {
       console.log('Karma child process ended');
       done();
     });    
   }
 
   function runKarma() {
-    startKarmaServer();
-
-    // Support `karma run`, useful for watch tasks
-    if (options.run) {
-        runner.run(options, function() {
-          console.log('Karma finished');
-          childProcess.kill();
-          done();
-        });
-      return;
+    if (options.serverStarted) {
+      // Just run
+      runner.run(options, function() {
+        console.log('Karma run finished');
+        done();
+      });
+    }
+    else {
+      startKarmaServer();
     }
   }
 
@@ -69,7 +92,7 @@ var karmaPlugin = function(options) {
       console.log('Queueing:', file.path);
     }
     else {
-      console.log('Got empty file:', file);
+      throw new Error('Got undefined file');
     }
   }
 
@@ -82,13 +105,7 @@ var karmaPlugin = function(options) {
     runKarma();
   }
 
-  var stream = es.through(queueFile, endStream);;
-
-  var done = (function done(code) {
-    this.emit('end');
-
-    // process.exit(); // Wrong, but node needs a kill -9 without this
-  }).bind(stream);
+  stream = es.through(queueFile, endStream);;
 
   return stream;
 };
