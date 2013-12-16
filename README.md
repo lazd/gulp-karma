@@ -22,6 +22,7 @@ var testFiles = [
 ];
 
 gulp.task('test', function() {
+  // Be sure to return the stream
   return gulp.src(testFiles)
     .pipe(karma({
       configFile: 'karma.conf.js',
@@ -30,7 +31,7 @@ gulp.task('test', function() {
 });
 
 gulp.task('default', function() {
-  return gulp.src(testFiles)
+  gulp.src(testFiles)
     .pipe(karma({
       configFile: 'karma.conf.js',
       action: 'watch'
@@ -59,6 +60,21 @@ One of the following:
 #### options.*
 
 Any Karma option can be passed as part of the options object. See [Karma Configuration] for a complete list of options. **Note:** It's best practice to put options in your Karma config file.
+
+
+## Notes
+
+## Task return value
+
+Karma runs asynchronously. When using `action: 'run'` in a task, you should return the stream so gulp knows the task finished.
+
+## Watching
+
+Due to the way Karma works, using `gulp.watch` to watch files results in contrived usage that doesn't work as expected in some cases. As a result, Karma's watch mechanism is employed to make usage of this plugin as straight forward as possible.
+
+## Globs
+
+Globs are resolved before they're sent to Karma, so if you add a new file that matches a glob you passed using `gulp.src('test/*').pipe(karma)`, it won't be caught by Karma.
 
 
 [Karma Configuration]: http://karma-runner.github.io/0.10/config/configuration-file.html
