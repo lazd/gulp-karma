@@ -4,6 +4,7 @@
 
 var gutil = require('gulp-util');
 var c = gutil.colors;
+var q = require('q');
 var es = require('event-stream');
 var extend = require('xtend');
 var path = require('path');
@@ -19,7 +20,9 @@ var karmaPlugin = function(options) {
 
   options = extend({
     autoWatch: false,
-    background: false
+    serverStarted: false,
+    background: false,
+    singleRun: false
     // allow passing of cli args on as client args, for example --grep=x
     // clientArgs: optimist.argv,
     // client: { args: optimist.argv }
@@ -30,12 +33,9 @@ var karmaPlugin = function(options) {
     options.configFile = path.resolve(options.configFile);
   }
 
-  console.log('Karma options:', options);
-
   // Just start the server
   if (options.background) {
     startKarmaServer();
-    return;
   }
 
   function done(code) {
@@ -51,7 +51,7 @@ var karmaPlugin = function(options) {
   }
 
   function startKarmaServer() {
-    console.log('Starting Karma server...');
+    gutil.log('Starting Karma server...');
 
     // Start the server
     child = spawn(
@@ -67,20 +67,25 @@ var karmaPlugin = function(options) {
 
     // Cleanup when the child process exits
     child.on('exit', function() {
-      console.log('Karma child process ended');
+      // gutil.log('Karma child process ended');
       done();
-    });    
+    });
   }
 
   function runKarma() {
-    if (options.serverStarted) {
-      // Just run
+    if (options.run) {
+      gutil.log('Karma options on run:', options);
+
+      delete options.files;
+      options.addedFiles = files;
+      // Run without starting the server
       runner.run(options, function() {
-        console.log('Karma run finished');
         done();
       });
     }
     else {
+      // Start the server
+      // Tests will be run if options.singleRun is set
       startKarmaServer();
     }
   }
@@ -88,8 +93,8 @@ var karmaPlugin = function(options) {
   var files = [];
   function queueFile(file) {
     if (file) {
+      gutil.log('Queueing file '+file.path);
       files.push(file.path);
-      console.log('Queueing:', file.path);
     }
     else {
       throw new Error('Got undefined file');
