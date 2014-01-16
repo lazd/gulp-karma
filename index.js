@@ -101,7 +101,7 @@ var karmaPlugin = function(options) {
     startKarmaServer();
   }
 
-  stream = es.through(queueFile, endStream);;
+  stream = es.through(queueFile, endStream);
 
   return stream;
 };

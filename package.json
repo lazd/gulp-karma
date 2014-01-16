@@ -1,16 +1,17 @@
 {
   "name": "gulp-karma",
-  "version": "0.1.0",
+  "version": "0.0.2",
   "description": "Karma plugin for gulp",
   "main": "index.js",
   "dependencies": {
     "optimist": "~0.6.0",
     "gulp-util": "~1.2.0",
     "xtend": "~2.1.1",
-    "karma": "~0.11.9",
     "event-stream": "~3.0.20"
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+    "karma": "~0.10.9"
+  },
   "devDependencies": {
     "should": "~2.1.1",
     "mocha": "~1.15.1"
