@@ -52,7 +52,7 @@ var karmaPlugin = function(options) {
 
     // End the stream if it exists
     if (stream) {
-      stream.emit('end');
+      stream.emit('end', code);
     }
   }
 
@@ -72,9 +72,9 @@ var karmaPlugin = function(options) {
     );
 
     // Cleanup when the child process exits
-    child.on('exit', function() {
+    child.on('exit', function(code) {
       // gutil.log('Karma child process ended');
-      done();
+      done(code);
     });
   }
 
