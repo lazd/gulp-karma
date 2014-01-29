@@ -90,8 +90,8 @@ var karmaPlugin = function(options) {
 
   function endStream() {
     // Override files if they were piped
-    // This doesn't work with the runner, but works fine with singleRun and autoWatch
-    if (files.length) {
+    // By specifying the override files option you can use the originally defined files in the karma.conf.js file.
+    if (options.overrideFiles !== false && files.length) {
       options.files = files;
     }
 
