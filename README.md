@@ -57,6 +57,15 @@ One of the following:
   * **`run`**: Start the server, run tests once, then exit.
   * **`watch`**: Start the server, run tests once, then watch for changes and run when files change.
 
+#### options.overrideFiles
+Type: `Boolean`
+Default: true
+
+One of the following:
+
+  * **`false`**: Do not override the files specified in gulp.src(), but use the files specified in the karma.conf.js.
+  * **`true`**:  Override the files specified in the karma.conf.js with the files specified in gulp.src().
+
 #### options.*
 
 Any Karma option can be passed as part of the options object. See [Karma Configuration] for a complete list of options. **Note:** It's best practice to put options in your Karma config file.
