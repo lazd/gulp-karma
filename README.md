@@ -1,5 +1,10 @@
-# gulp-karma [![NPM version][npm-image]][npm-url] [![Build status][travis-image]][travis-url]
-> Karma plugin for gulp 3
+# gulp-karma
+
+[![NPM version][npm-image]][npm-url]
+[![Dependency status][deps-image]][deps-url]
+[![devDependency Status][dev-deps-image]][dev-deps-url]
+
+Karma plugin for Gulp 3
 
 ## Usage
 
@@ -49,7 +54,7 @@ Type: `String`
 The path to the Karma configuration file.
 
 #### options.action
-Type: `String`  
+Type: `String`
 Default: `run`
 
 One of the following:
@@ -78,7 +83,9 @@ Globs are resolved before they're sent to Karma, so if you add a new file that m
 
 
 [Karma Configuration]: http://karma-runner.github.io/0.10/config/configuration-file.html
-[travis-url]: http://travis-ci.org/lazd/gulp-karma
-[travis-image]: https://secure.travis-ci.org/lazd/gulp-karma.png?branch=master
 [npm-url]: https://npmjs.org/package/gulp-karma
 [npm-image]: https://badge.fury.io/js/gulp-karma.png
+[deps-image]: https://david-dm.org/lazd/gulp-karma.png
+[deps-url]: https://david-dm.org/lazd/gulp-karma)
+[dev-deps-image]: https://david-dm.org/lazd/gulp-karma/dev-status.png
+[dev-deps-url]: https://david-dm.org/lazd/gulp-karma#info=devDependencies
