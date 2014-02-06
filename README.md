@@ -1,7 +1,6 @@
 # gulp-karma
 
 [![NPM version][npm-image]][npm-url]
-[![Build status][travis-image]][travis-url]
 [![Dependency status][deps-image]][deps-url]
 [![devDependency Status][dev-deps-image]][dev-deps-url]
 
@@ -84,8 +83,6 @@ Globs are resolved before they're sent to Karma, so if you add a new file that m
 
 
 [Karma Configuration]: http://karma-runner.github.io/0.10/config/configuration-file.html
-[travis-url]: http://travis-ci.org/lazd/gulp-karma
-[travis-image]: https://secure.travis-ci.org/lazd/gulp-karma.png?branch=master
 [npm-url]: https://npmjs.org/package/gulp-karma
 [npm-image]: https://badge.fury.io/js/gulp-karma.png
 [deps-image]: https://david-dm.org/lazd/gulp-karma.png
