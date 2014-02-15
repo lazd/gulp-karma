@@ -52,7 +52,12 @@ var karmaPlugin = function(options) {
 
     // End the stream if it exists
     if (stream) {
-      stream.emit('end');
+      if (code) {
+        stream.emit('error', new gutil.PluginError('gulp-karma', 'karma exited with code ' + code));
+      }
+      else {
+        stream.emit('end');
+      }
     }
   }
 
@@ -72,9 +77,9 @@ var karmaPlugin = function(options) {
     );
 
     // Cleanup when the child process exits
-    child.on('exit', function() {
+    child.on('exit', function(code) {
       // gutil.log('Karma child process ended');
-      done();
+      done(code);
     });
   }
 
