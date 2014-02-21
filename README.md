@@ -49,7 +49,7 @@ Type: `String`
 The path to the Karma configuration file.
 
 #### options.action
-Type: `String`  
+Type: `String`
 Default: `run`
 
 One of the following:
@@ -76,6 +76,16 @@ Due to the way Karma works, using `gulp.watch` to watch files results in contriv
 
 Globs are resolved before they're sent to Karma, so if you add a new file that matches a glob you passed using `gulp.src('test/*').pipe(karma)`, it won't be caught by Karma.
 
+## Failing the build when unit tests fail
+
+```javascript
+  karma(config)
+  .on('end', function(exitCode) {
+    if (exitCode !== 0) {
+      throw new Error('Unit test failed, karma exit with ' + exitCode);
+    })
+  })
+```
 
 [Karma Configuration]: http://karma-runner.github.io/0.10/config/configuration-file.html
 [travis-url]: http://travis-ci.org/lazd/gulp-karma
