@@ -49,13 +49,22 @@ Type: `String`
 The path to the Karma configuration file.
 
 #### options.action
-Type: `String`  
+Type: `String`
 Default: `run`
 
 One of the following:
 
   * **`run`**: Start the server, run tests once, then exit.
   * **`watch`**: Start the server, run tests once, then watch for changes and run when files change.
+
+#### options.noOverrideFiles
+Type: `Boolean`
+Default: `false`
+
+One of the following:
+
+  * **`true`**: Use paths supplied from `gulp.src()` as the `files` option for Karma.
+  * **`false`**: Don't do that (helpful when using the `{included: false}` option, such as running with RequireJS).
 
 #### options.*
 
