@@ -89,7 +89,7 @@ var karmaPlugin = function(options) {
       files.push(file.path);
     }
     else {
-      stream.emit('error', new Error('Got undefined file'));
+      stream.emit('error', new gutil.PluginError('gulp-karma', 'Got undefined file'));
     }
   }
 
