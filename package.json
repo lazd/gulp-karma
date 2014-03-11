@@ -1,6 +1,6 @@
 {
   "name": "gulp-karma",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Karma plugin for gulp",
   "main": "index.js",
   "dependencies": {
@@ -10,7 +10,7 @@
     "event-stream": "~3.0.20"
   },
   "peerDependencies": {
-    "karma": ">=0.10 <0.12"
+    "karma": ">=0.10 <=0.13"
   },
   "devDependencies": {
     "should": "~2.1.1",
