@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "optimist": "~0.6.0",
-    "gulp-util": "~1.2.0",
+    "gulp-util": "~2.2.14",
     "xtend": "~2.1.1",
     "event-stream": "~3.0.20"
   },
