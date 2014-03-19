@@ -10,6 +10,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 
 var server = require('karma').server;
+var runner = require('karma').runner;
 
 var karmaPlugin = function(options) {
   var child;
@@ -35,6 +36,14 @@ var karmaPlugin = function(options) {
   else if (action === 'run') {
     // Tell Karma to run once and exit
     options.singleRun = true;
+
+    // Disable watching
+    options.autoWatch = false;
+  }
+  // use 'start' action for support native gulp watch mechanism
+  else if (action === 'start') {
+    // Never set singleRun in background mode
+    options.singleRun = false;
 
     // Disable watching
     options.autoWatch = false;
@@ -72,7 +81,7 @@ var karmaPlugin = function(options) {
         JSON.stringify(options)
       ],
       {
-        stdio: 'inherit'
+        stdio: (action === 'start') ? 'ignore' : 'inherit'
       }
     );
 
@@ -108,6 +117,42 @@ var karmaPlugin = function(options) {
 
   stream = es.through(queueFile, endStream);
 
+  return stream;
+};
+
+
+// Manually runs tests on an already running server
+// Usefull for use with gulp.watch or gulp-watch plugin
+karmaPlugin.run = function(options) {
+  var stream, buffer = [];
+
+  options = extend({}, options);
+
+
+  // Remove option in case Karma uses it in the future
+  delete options.action;
+
+  function cb(code) {
+    if (code) {
+      stream.emit('error', new gutil.PluginError('gulp-karma', 'karma runner exited with code ' + code));
+    }
+    else {
+      while (buffer.length) {
+        stream.emit('data', buffer.shift());
+      }
+      stream.emit('end');
+    }
+  }
+
+  function endStream() {
+    runner.run(options, cb);
+  }
+
+  function queueFile(file) {
+    buffer.push(file);
+  }
+
+  stream = es.through(queueFile, endStream);
   return stream;
 };
 
