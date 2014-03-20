@@ -27,7 +27,8 @@ gulp.task('test', function() {
   return gulp.src(testFiles)
     .pipe(karma({
       configFile: 'karma.conf.js',
-      action: 'run'
+      action: 'run',
+      dieOnError: true
     }))
     .on('error', function(err) {
       // Make sure failed tests cause gulp to exit non-zero
@@ -54,13 +55,19 @@ Type: `String`
 The path to the Karma configuration file.
 
 #### options.action
-Type: `String`  
+Type: `String`
 Default: `run`
 
 One of the following:
 
   * **`run`**: Start the server, run tests once, then exit.
   * **`watch`**: Start the server, run tests once, then watch for changes and run when files change.
+
+#### options.dieOnError
+Type: `Boolean`
+Default: `true`
+
+Whether or not to throw a fatal plugin error that corresponds to the exit code of the Karma runner. You might want to set this to false in the case of a watcher that you don't want to die even when errors happen in a test.
 
 #### options.*
 
