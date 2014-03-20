@@ -17,7 +17,8 @@ var karmaPlugin = function(options) {
   var files = [];
 
   options = extend({
-    action: 'run'
+    action: 'run',
+    dieOnError: true
   }, options);
 
   var action = options.action;
@@ -52,7 +53,7 @@ var karmaPlugin = function(options) {
 
     // End the stream if it exists
     if (stream) {
-      if (code) {
+      if (code && options.dieOnError) {
         stream.emit('error', new gutil.PluginError('gulp-karma', 'karma exited with code ' + code));
       }
       else {
