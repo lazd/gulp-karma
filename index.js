@@ -14,6 +14,7 @@ var server = require('karma').server;
 var karmaPlugin = function(options) {
   var child;
   var stream;
+  var overrideFiles = !options.noOverrideFiles;
   var files = [];
 
   options = extend({
@@ -24,6 +25,7 @@ var karmaPlugin = function(options) {
 
   // Remove option in case Karma uses it in the future
   delete options.action;
+  delete options.noOverrideFiles;
 
   if (action === 'watch') {
     // Never set singleRun in background mode
@@ -96,7 +98,7 @@ var karmaPlugin = function(options) {
   function endStream() {
     // Override files if they were piped
     // This doesn't work with the runner, but works fine with singleRun and autoWatch
-    if (files.length) {
+    if (files.length && overrideFiles) {
       options.files = files;
     }
 
