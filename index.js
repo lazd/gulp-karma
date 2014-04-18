@@ -3,112 +3,158 @@
 'use strict';
 
 var gutil = require('gulp-util');
-var c = gutil.colors;
-var es = require('event-stream');
 var extend = require('xtend');
 var path = require('path');
 var spawn = require('child_process').spawn;
+var karmaParseConfig = require('karma/lib/config').parseConfig;
 
-var server = require('karma').server;
+var runner = require('karma').runner;
 
 var karmaPlugin = function(options) {
-  var child;
-  var stream;
-  var files = [];
+  options.configFile = path.resolve(options.configFile);
 
-  options = extend({
-    action: 'run'
-  }, options);
+  return {
+    _ignoreServerOutput: false, // On when running with runner
+    _browsers: 0,
+    _waitingForBrowsers: true,
+    _serverStarted: false,
+    _serverReady: false,
+    _runQueued: false,
+    _runIfQueued: function() {
+      if (this._runQueued) {
+        this.run();
+        this._runQueued = false;
+      }
+    },
+    options: options,
+    start: start,
+    stop: stop,
+    run: run,
+    once: once
+  };
+};
 
-  var action = options.action;
+function start(cb, options) {
+  var self = this;
 
-  // Remove option in case Karma uses it in the future
-  delete options.action;
-
-  if (action === 'watch') {
-    // Never set singleRun in background mode
-    options.singleRun = false;
-
-    // Enable watching
-    options.autoWatch = true;
+  if (this._serverStarted) {
+    gutil.log('Karma server already started');
+    return;
   }
-  else if (action === 'run') {
-    // Tell Karma to run once and exit
-    options.singleRun = true;
 
-    // Disable watching
-    options.autoWatch = false;
-  }
+  this._serverStarted = true;
 
-  if (options.configFile) {
-    options.configFile = path.resolve(options.configFile);
-  }
+  gutil.log('Starting Karma server...');
 
-  function done(code) {
-    // Stop the server if it's running
-    if (child) {
-      child.kill();
+  options = extend(this.options, options);
+
+  // Start the server
+  // A child process is used because server.start() refuses to die unless you do a process.exit()
+  // See https://github.com/karma-runner/karma/issues/734
+  var child = this.child = spawn(
+    'node',
+    [
+      path.join(__dirname, 'lib', 'background.js'),
+      JSON.stringify(options)
+    ]
+  );
+
+  // Cleanup when the child process exits
+  child.on('exit', function(code) {
+    gutil.log('Karma server ended');
+
+    if (typeof cb === 'function') {
+      cb(code);
+    }
+  });
+
+  child.stderr.on('data', function(data) {
+    if (!self._ignoreServerOutput) {
+      process.stderr.write(data);
+    }
+  });
+
+  child.stdout.on('data', function(data) {
+    if (!self._ignoreServerOutput) {
+      process.stdout.write(data);
     }
 
-    // End the stream if it exists
-    if (stream) {
-      if (code) {
-        stream.emit('error', new gutil.PluginError('gulp-karma', 'karma exited with code ' + code));
+    var str = data.toString();
+
+    if (str.match(/Karma .*? server started/)) {
+      gutil.log('Karma server ready');
+      self._serverReady = true;
+    }
+
+    if (str.match(/Starting browser/)) {
+      // Store the number of browsers we're waiting to capture
+      self._browsers++;
+      self._waitingForBrowsers = true;
+      gutil.log('Waiting for '+self._browsers+' browsers...');
+    }
+
+    if (str.match(/Connected/)) {
+      // Do nothing unless we're waiting
+      if (!self._waitingForBrowsers) {
+        return;
+      }
+
+      self._browsers--;
+      if (self._browsers === 0) {
+        self._waitingForBrowsers = false;
+        gutil.log('All browsers captured!');
+        self._runIfQueued();
       }
       else {
-        stream.emit('end');
+        gutil.log('Waiting for '+self._browsers+' browsers...');
       }
     }
+  });
+
+  return this;
+}
+
+function stop() {
+  if (this.child) {
+    gutil.log('Killing Karma server');
+    this.child.kill();
+  }
+  else {
+    gutil.log('Karma server not running');
   }
 
-  function startKarmaServer() {
-    gutil.log('Starting Karma server...');
+  return this;
+};
 
-    // Start the server
-    child = spawn(
-      'node',
-      [
-        path.join(__dirname, 'lib', 'background.js'),
-        JSON.stringify(options)
-      ],
-      {
-        stdio: 'inherit'
-      }
-    );
+function once(cb, options) {
+  this.start(cb, extend(options, {
+    singleRun: true,
+    autoWatch: false // @todo might not be needed
+  }));
 
-    // Cleanup when the child process exits
-    child.on('exit', function(code) {
-      // gutil.log('Karma child process ended');
-      done(code);
-    });
+  return this;
+};
+
+function run(cb, options) {
+  var self = this;
+
+  if (!this._serverReady) {
+    this._runQueued = true;
+    return;
   }
 
-  function queueFile(file) {
-    if (file) {
-      // gutil.log('Queueing file '+file.path);
-      files.push(file.path);
+  this._ignoreServerOutput = true;
+  runner.run(extend(this.options, options), function(code) {
+    self._ignoreServerOutput = false;
+
+    gutil.log('Karma run completed '+(code === 0 ? 'successfully' : 'with error '+code));
+
+    if (typeof cb === 'function') {
+      cb(code);
     }
-    else {
-      stream.emit('error', new Error('Got undefined file'));
-    }
-  }
+  });
 
-  function endStream() {
-    // Override files if they were piped
-    // This doesn't work with the runner, but works fine with singleRun and autoWatch
-    if (files.length) {
-      options.files = files;
-    }
-
-    // Start the server
-    // If options.singleRun: Server starts, tests run, task completes
-    // If options.background: Server starts, tests run, files watched
-    startKarmaServer();
-  }
-
-  stream = es.through(queueFile, endStream);
-
-  return stream;
+  return this;
 };
 
 module.exports = karmaPlugin;
