@@ -6,9 +6,9 @@ var extend = require('xtend');
 var path = require('path');
 var spawn = require('child_process').spawn;
 var karmaParseConfig = require('karma/lib/config').parseConfig;
+var Q = require('q');
 
 var runner = require('karma').runner;
-
 
 var karmaHelper = function(options) {
   var obj = {
@@ -17,6 +17,9 @@ var karmaHelper = function(options) {
     run: run,
     once: once
   };
+
+  // Store debug mode based on options in first invocation
+  var debug = options.debug;
 
   // Disables server output
   var ignoreServerOutput = false;
@@ -40,25 +43,31 @@ var karmaHelper = function(options) {
   // Process options
   options.configFile = path.resolve(options.configFile);
 
-  function start(cb, newOptions) {
+  // The promise that will be fulfilled when the server is started
+  var readyDefer = Q.defer();
+
+  function start(newOptions) {
+    newOptions = extend(options, newOptions);
+
     if (serverStarted) {
-      console.log('Karma server already started');
-      return;
+      if (debug) {
+        console.log('Karma server already started');
+      }
+
+      return readyDefer.promise;
     }
 
     // Store that we've spawned the server
     serverStarted = true;
 
-    newOptions = extend(options, newOptions);
-
-    if (newOptions.debug) {
+    if (debug) {
       console.log('Starting Karma server...');
     }
 
     // Start the server
     // A child process is used because server.start() refuses to die unless you do a process.exit()
     // Doing a process.exit() would muck with gulp, so we have to take other measures
-    // See https://github.com/karma-runner/karma/issues/734
+    // See https://github.com/karma-runner/karma/issues/734 and https://github.com/karma-runner/karma/issues/1035
     child = spawn(
       'node',
       [
@@ -76,12 +85,8 @@ var karmaHelper = function(options) {
 
     // Cleanup when the child process exits
     child.on('exit', function(code) {
-      if (newOptions.debug) {
-        console.log('Karma server ended');
-      }
-
-      if (typeof cb === 'function') {
-        cb(code);
+      if (debug) {
+        console.log('Karma server stopped');
       }
     });
 
@@ -98,12 +103,16 @@ var karmaHelper = function(options) {
 
       var str = data.toString();
 
+      // Gross, awful hack, but there's no way to know when Karma has captured browsers
       if (str.match(/Starting browser/)) {
         // Store the number of browsers we're waiting to capture
         browsersLeft++;
-      }
 
-      if (str.match(/Connected/)) {
+        if (debug) {
+          console.log('Waiting for '+browsersLeft+' browsers...');
+        }
+      }
+      else if (str.match(/Connected/)) {
         // Do nothing unless we're waiting
         // Otherwise, reconnects can result in negative browsersLeft
         if (!serverReady) {
@@ -111,70 +120,69 @@ var karmaHelper = function(options) {
           browsersLeft--;
 
           if (browsersLeft === 0) {
-            handleServerReady();
+            readyDefer.resolve();
           }
-          else {
-            if (newOptions.debug) {
-              console.log('Waiting for '+browsersLeft+' browsers...');
-            }
+          else if (debug) {
+            console.log('Browser connected! Waiting for '+browsersLeft+' more...');
           }
         }
       }
     });
 
-    return obj;
-  };
+    return readyDefer.promise;
+  }
 
   function stop() {
+    var deferred = Q.defer();
+
     if (child) {
-      if (options.debug) {
+      if (debug) {
         console.log('Killing Karma server...');
       }
+
       child.kill();
+      deferred.resolve();
     }
-    else if (options.debug) {
-      console.log('Karma server not running');
+    else {
+      if (debug) {
+        console.log('Karma server not running');
+      }
+
+      deferred.reject(new Error('Karma server not running'));
     }
 
-    return obj;
-  };
+    return deferred.promise;
+  }
 
-  function once(cb, newOptions) {
-    start(cb, extend(newOptions, {
+  function once(newOptions) {
+    return start(extend(newOptions, {
       singleRun: true,
       autoWatch: false // @todo might not be needed
     }));
+  }
 
-    return obj;
-  };
+  function run(newOptions) {
+    return start().then(function() {
+      var deferred = Q.defer();
 
-  function run(cb, newOptions) {
-    if (!serverReady) {
-      runWhenServerReady = true;
-      return obj;
-    }
+      // Runner and server will the same output
+      // Stop the server's output from displaying
+      ignoreServerOutput = true;
+      runner.run(extend(options, newOptions), function(code) {
+        ignoreServerOutput = false;
 
-    // Runner and server will the same output
-    // Stop the server's output from displaying
-    ignoreServerOutput = true;
-    runner.run(extend(options, newOptions), function(code) {
-      ignoreServerOutput = false;
+        if (code) {
+          var error = new Error('Tests failed with code '+code);
+          error.code = code;
+          deferred.reject(error);
+        }
+        else {
+          deferred.resolve();
+        }
+      });
 
-      if (typeof cb === 'function') {
-        cb(code);
-      }
+      return deferred.promise;
     });
-
-    return obj;
-  };
-
-  function handleServerReady() {
-    serverReady = true;
-
-    if (runWhenServerReady) {
-      run();
-      runWhenServerReady = false;
-    }
   }
 
   return obj;

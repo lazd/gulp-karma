@@ -4,14 +4,11 @@
   "description": "Karma plugin for gulp",
   "main": "index.js",
   "dependencies": {
-    "xtend": "~2.1.1"
+    "q": "^1.0.1",
+    "xtend": "^3.0.0"
   },
   "peerDependencies": {
     "karma": "^0.12"
-  },
-  "devDependencies": {
-    "should": "~2.1.1",
-    "mocha": "~1.15.1"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha"
