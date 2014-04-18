@@ -9,20 +9,49 @@ var karmaParseConfig = require('karma/lib/config').parseConfig;
 
 var runner = require('karma').runner;
 
-var methods = {
-  start: function(cb, options) {
 
-    if (this._serverStarted) {
+var karmaHelper = function(options) {
+  var obj = {
+    start: start,
+    stop: stop,
+    run: run,
+    once: once
+  };
+
+  // Disables server output
+  var ignoreServerOutput = false;
+
+  // Whether a child process has been started for the server
+  var serverStarted = false;
+
+  // Whether the server is ready to run tests
+  // At least one browser is connected
+  var serverReady = false;
+
+  // Whether to perform a run when the server is ready
+  var runWhenServerReady = false;
+
+  // The numbers of browsers remaining to be captures
+  var browsersLeft = 0;
+
+  // The child process
+  var child;
+
+  // Process options
+  options.configFile = path.resolve(options.configFile);
+
+  function start(cb, newOptions) {
+    if (serverStarted) {
       console.log('Karma server already started');
       return;
     }
 
-    var self = this;
-    this._serverStarted = true;
+    // Store that we've spawned the server
+    serverStarted = true;
 
-    options = extend(this.options, options);
+    newOptions = extend(options, newOptions);
 
-    if (options.debug) {
+    if (newOptions.debug) {
       console.log('Starting Karma server...');
     }
 
@@ -30,11 +59,11 @@ var methods = {
     // A child process is used because server.start() refuses to die unless you do a process.exit()
     // Doing a process.exit() would muck with gulp, so we have to take other measures
     // See https://github.com/karma-runner/karma/issues/734
-    var child = this.child = spawn(
+    child = spawn(
       'node',
       [
         path.join(__dirname, 'lib', 'background.js'),
-        JSON.stringify(options)
+        JSON.stringify(newOptions)
       ],
       {
         stdio: [
@@ -47,7 +76,7 @@ var methods = {
 
     // Cleanup when the child process exits
     child.on('exit', function(code) {
-      if (self.options.debug) {
+      if (newOptions.debug) {
         console.log('Karma server ended');
       }
 
@@ -57,13 +86,13 @@ var methods = {
     });
 
     child.stderr.on('data', function(data) {
-      if (!self._ignoreServerOutput) {
+      if (!ignoreServerOutput) {
         process.stderr.write(data);
       }
     });
 
     child.stdout.on('data', function(data) {
-      if (!self._ignoreServerOutput) {
+      if (!ignoreServerOutput) {
         process.stdout.write(data);
       }
 
@@ -71,104 +100,84 @@ var methods = {
 
       if (str.match(/Starting browser/)) {
         // Store the number of browsers we're waiting to capture
-        self._browsersLeft++;
+        browsersLeft++;
       }
 
       if (str.match(/Connected/)) {
         // Do nothing unless we're waiting
-        // Otherwise, reconnects can result in negative _browsersLeft
-        if (!self._serverReady) {
+        // Otherwise, reconnects can result in negative browsersLeft
+        if (!serverReady) {
           // One less browser to wait for
-          self._browsersLeft--;
+          browsersLeft--;
 
-          if (self._browsersLeft === 0) {
-            self._handleServerReady();
+          if (browsersLeft === 0) {
+            handleServerReady();
           }
           else {
-            if (self.options.debug) {
-              console.log('Waiting for '+self._browsersLeft+' browsers...');
+            if (newOptions.debug) {
+              console.log('Waiting for '+browsersLeft+' browsers...');
             }
           }
         }
       }
     });
 
-    return this;
-  },
+    return obj;
+  };
 
-  stop: function() {
-    if (this.child) {
-      if (this.options.debug) {
+  function stop() {
+    if (child) {
+      if (options.debug) {
         console.log('Killing Karma server...');
       }
-      this.child.kill();
+      child.kill();
     }
-    else if (this.options.debug) {
+    else if (options.debug) {
       console.log('Karma server not running');
     }
 
-    return this;
-  },
+    return obj;
+  };
 
-  once: function(cb, options) {
-    this.start(cb, extend(options, {
+  function once(cb, newOptions) {
+    start(cb, extend(newOptions, {
       singleRun: true,
       autoWatch: false // @todo might not be needed
     }));
 
-    return this;
-  },
+    return obj;
+  };
 
-  run: function(cb, options) {
-    if (!this._serverReady) {
-      this._runWhenServerReady = true;
-      return;
+  function run(cb, newOptions) {
+    if (!serverReady) {
+      runWhenServerReady = true;
+      return obj;
     }
-
-    var self = this;
 
     // Runner and server will the same output
     // Stop the server's output from displaying
-    this._ignoreServerOutput = true;
-    runner.run(extend(this.options, options), function(code) {
-      self._ignoreServerOutput = false;
+    ignoreServerOutput = true;
+    runner.run(extend(options, newOptions), function(code) {
+      ignoreServerOutput = false;
 
       if (typeof cb === 'function') {
         cb(code);
       }
     });
 
-    return this;
-  },
+    return obj;
+  };
 
-  _handleServerReady: function() {
-    this._serverReady = true;
+  function handleServerReady() {
+    serverReady = true;
 
-    if (this._runWhenServerReady) {
-      this.run();
-      this._runWhenServerReady = false;
+    if (runWhenServerReady) {
+      run();
+      runWhenServerReady = false;
     }
   }
-};
 
-var karmaHelper = function(options) {
-  options.configFile = path.resolve(options.configFile);
-
-  return extend({}, methods, {
-    options: options,
-
-    // Disables server output
-    _ignoreServerOutput: false,
-
-    // The numbers of browsers remaining to be captures
-    _browsersLeft: 0,
-
-    // Whether a child process has been started for the server
-    _serverStarted: false,
-
-    // Whether to perform a run when the server is ready
-    _runWhenServerReady: false
-  });
+  return obj;
 };
 
 module.exports = karmaHelper;
