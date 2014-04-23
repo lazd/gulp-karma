@@ -155,7 +155,7 @@ var karmaHelper = function(options) {
   }
 
   function once(newOptions) {
-    return start(extend(newOptions, {
+    return run(extend(newOptions, {
       singleRun: true,
       autoWatch: false // @todo might not be needed
     }));
