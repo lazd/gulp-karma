@@ -155,10 +155,29 @@ var karmaHelper = function(options) {
   }
 
   function once(newOptions) {
-    return run(extend(newOptions, {
-      singleRun: true,
-      autoWatch: false // @todo might not be needed
-    }));
+    newOptions = extend(options, newOptions, {singleRun: true});
+    var deferred = Q.defer();
+
+    spawn(
+      'node',
+      [
+        path.join(__dirname, 'lib', 'background.js'),
+        JSON.stringify(newOptions)
+      ],
+      {
+        stdio: [0, 1, 2]
+      }
+    ).on('exit', function (code) {
+      if (code) {
+        var error = new Error('Tests failed with code '+code);
+        error.code = code;
+        deferred.reject(error);
+      } else {
+        deferred.resolve();
+      }
+    });
+
+    return deferred.promise;
   }
 
   function run(newOptions) {
