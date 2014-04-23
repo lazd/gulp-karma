@@ -40,6 +40,9 @@ var karmaHelper = function(options) {
   // The child process
   var child;
 
+  //Location of the wrapper background script
+  var background = path.join(__dirname, 'lib', 'background.js');
+
   // Process options
   options.configFile = path.resolve(options.configFile);
 
@@ -71,7 +74,7 @@ var karmaHelper = function(options) {
     child = spawn(
       'node',
       [
-        path.join(__dirname, 'lib', 'background.js'),
+        background,
         JSON.stringify(newOptions)
       ],
       {
@@ -155,24 +158,25 @@ var karmaHelper = function(options) {
   }
 
   function once(newOptions) {
+    var deferred = Q.defer(), oncePs;
     newOptions = extend(options, newOptions, {singleRun: true});
-    var deferred = Q.defer();
 
-    spawn(
+    oncePs = spawn(
       'node',
       [
-        path.join(__dirname, 'lib', 'background.js'),
+        background,
         JSON.stringify(newOptions)
       ],
       {
-        stdio: [0, 1, 2]
+        stdio: 'inherit'
       }
-    ).on('exit', function (code) {
+    );
+
+    oncePs.on('exit', function (code) {
       if (code) {
-        var error = new Error('Tests failed with code '+code);
-        error.code = code;
-        deferred.reject(error);
-      } else {
+        deferred.reject(new TestsFailedError(code));
+      }
+      else {
         deferred.resolve();
       }
     });
@@ -191,9 +195,7 @@ var karmaHelper = function(options) {
         ignoreServerOutput = false;
 
         if (code) {
-          var error = new Error('Tests failed with code '+code);
-          error.code = code;
-          deferred.reject(error);
+          deferred.reject(new TestsFailedError(code));
         }
         else {
           deferred.resolve();
@@ -203,6 +205,15 @@ var karmaHelper = function(options) {
       return deferred.promise;
     });
   }
+
+
+  function TestsFailedError(code) {
+    Error.call(this, 'Tests failed with code '+code);
+    this.code = code;
+  }
+
+  TestsFailedError.prototype = Object.create(Error.prototype);
+  TestsFailedError.prototype.constructor = TestsFailedError;
 
   return obj;
 };
