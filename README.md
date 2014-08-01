@@ -82,7 +82,7 @@ Due to the way Karma works, using `gulp.watch` to watch files results in contriv
 Globs are resolved before they're sent to Karma, so if you add a new file that matches a glob you passed using `gulp.src('test/*').pipe(karma)`, it won't be caught by Karma.
 
 
-[Karma Configuration]: http://karma-runner.github.io/0.10/config/configuration-file.html
+[Karma Configuration]: http://karma-runner.github.io/0.12/config/configuration-file.html
 [travis-url]: http://travis-ci.org/lazd/gulp-karma
 [travis-image]: https://secure.travis-ci.org/lazd/gulp-karma.png?branch=master
 [npm-url]: https://npmjs.org/package/gulp-karma
