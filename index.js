@@ -65,7 +65,7 @@ var karmaPlugin = function(options) {
     gutil.log('Starting Karma server...');
 
     // Start the server
-    child = spawn(
+    server.process = child = spawn(
       'node',
       [
         path.join(__dirname, 'lib', 'background.js'),
@@ -75,7 +75,9 @@ var karmaPlugin = function(options) {
         stdio: 'inherit'
       }
     );
-
+    server.kill = function() {
+      child.kill();
+    };
     // Cleanup when the child process exits
     child.on('exit', function(code) {
       // gutil.log('Karma child process ended');
