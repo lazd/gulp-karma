@@ -3,13 +3,10 @@
 'use strict';
 
 var gutil = require('gulp-util');
-var c = gutil.colors;
 var es = require('event-stream');
 var extend = require('xtend');
 var path = require('path');
 var spawn = require('child_process').spawn;
-
-var server = require('karma').server;
 
 var karmaPlugin = function(options) {
   var child;
