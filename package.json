@@ -4,17 +4,17 @@
   "description": "Karma plugin for gulp",
   "main": "index.js",
   "dependencies": {
+    "event-stream": "^3.3.1",
+    "gulp-util": "^3.0.6",
     "optimist": "~0.6.0",
-    "gulp-util": "~2.2.14",
-    "xtend": "~2.1.1",
-    "event-stream": "~3.0.20"
+    "xtend": "^4.0.0"
   },
   "peerDependencies": {
-    "karma": ">=0.10 <=0.13"
+    "karma": ">=0.10 <=0.14"
   },
   "devDependencies": {
-    "should": "~2.1.1",
-    "mocha": "~1.15.1"
+    "mocha": "^2.2.5",
+    "should": "^7.0.2"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha"
