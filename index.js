@@ -66,7 +66,7 @@ var karmaPlugin = function(options) {
 
     // Start the server
     child = spawn(
-      'node',
+      process.execPath,
       [
         path.join(__dirname, 'lib', 'background.js'),
         JSON.stringify(options)
