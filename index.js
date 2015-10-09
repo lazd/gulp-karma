@@ -66,15 +66,16 @@ var karmaPlugin = function(options) {
 
     // Start the server
     child = spawn(
-      'node',
-      [
-        path.join(__dirname, 'lib', 'background.js'),
-        JSON.stringify(options)
-      ],
-      {
-        stdio: 'inherit'
-      }
+        'node',
+        [
+          path.join(__dirname, 'lib', 'background.js')
+        ],
+        {
+          stdio: ['pipe', process.stdout, process.stderr]
+        }
     );
+    child.stdin.write(JSON.stringify(options));
+    child.stdin.end();
 
     // Cleanup when the child process exits
     child.on('exit', function(code) {
