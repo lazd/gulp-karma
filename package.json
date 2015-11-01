@@ -10,7 +10,7 @@
     "event-stream": "~3.0.20"
   },
   "peerDependencies": {
-    "karma": ">=0.10 <=0.13"
+    "karma": ">=0.10 <=0.13.14"
   },
   "devDependencies": {
     "should": "~2.1.1",
